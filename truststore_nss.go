@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 var (
@@ -65,7 +66,11 @@ func (m *mkcert) checkNSS() bool {
 }
 
 func (m *mkcert) installNSS() bool {
+	var writtenPasswordNotice sync.Once
 	if m.forEachNSSProfile(func(profile string) {
+		writtenPasswordNotice.Do(func() {
+			log.Printf("You will be asked for your %s master password to install the certificate.\n", NSSBrowsers)
+		})
 		cmd := exec.Command(certutilPath, "-A", "-d", profile, "-t", "C,,", "-n", m.caUniqueName(), "-i", filepath.Join(m.CAROOT, rootName))
 		out, err := cmd.CombinedOutput()
 		fatalIfCmdErr(err, "certutil -A", out)
