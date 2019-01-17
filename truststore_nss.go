@@ -13,7 +13,7 @@ var (
 	hasNSS       bool
 	hasCertutil  bool
 	certutilPath string
-	nssDB        = filepath.Join(os.Getenv("HOME"), ".pki/nssdb")
+	nssDB        string
 )
 
 func init() {
@@ -46,6 +46,17 @@ func init() {
 		var err error
 		certutilPath, err = exec.LookPath("certutil")
 		hasCertutil = err == nil
+		// look for NSS db location
+		for _, path := range []string{
+			filepath.Join(os.Getenv("HOME"), ".pki/nssdb"),
+			filepath.Join(os.Getenv("HOME"), "snap/chromium/current/.pki/nssdb"), // Ubuntu snap's
+			"/etc/pki/nssdb", // CentOS 7
+		} {
+			if _, err := os.Stat(path); err == nil {
+				nssDB = path
+				break
+			}
+		}
 	}
 }
 
